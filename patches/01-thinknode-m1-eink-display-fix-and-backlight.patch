@@ -1,0 +1,39 @@
+diff --git a/src/helpers/ui/GxEPDDisplay.cpp b/src/helpers/ui/GxEPDDisplay.cpp
+index 332157eb..d4535336 100644
+--- a/src/helpers/ui/GxEPDDisplay.cpp
++++ b/src/helpers/ui/GxEPDDisplay.cpp
+@@ -82,12 +82,6 @@ void GxEPDDisplay::turnOff() {
+   expander.digitalWrite(EXP_PIN_BACKLIGHT, LOW);
+ #endif
+   _isOn = false;
+-  // do full refresh before powering off to clear screen
+-  // no full refresh needed at wakeup
+-  display.clearScreen(0xFF); // Clears microcontroller side RAM
+-  display.writeScreenBuffer(0xFF); // Forces 0xFF (White) into the display controller's history registers
+-  resetPartialRefreshCounter();
+-  last_display_crc_value=0;
+   display.hibernate();
+ }
+ 
+diff --git a/variants/thinknode_m1/platformio.ini b/variants/thinknode_m1/platformio.ini
+index 89c48403..5c439ed9 100644
+--- a/variants/thinknode_m1/platformio.ini
++++ b/variants/thinknode_m1/platformio.ini
+@@ -79,6 +79,8 @@ build_flags =
+   -D BLE_PIN_CODE=123456
+   -D BLE_DEBUG_LOGGING=1
+   -D DISPLAY_ROTATION=4
++  -D AUTO_OFF_MILLIS=0
++  -D BACKLIGHT_BTN=PIN_BUTTON2
+   -D DISPLAY_CLASS=GxEPDDisplay
+   -D OFFLINE_QUEUE_SIZE=256
+   -D PIN_BUZZER=6
+@@ -112,6 +114,8 @@ build_flags =
+   -D MAX_CONTACTS=350
+   -D MAX_GROUP_CHANNELS=40
+   -D DISPLAY_ROTATION=4
++  -D AUTO_OFF_MILLIS=0
++  -D BACKLIGHT_BTN=PIN_BUTTON2
+   -D QSPIFLASH=1
+   -D DISPLAY_CLASS=GxEPDDisplay
+   -D OFFLINE_QUEUE_SIZE=256

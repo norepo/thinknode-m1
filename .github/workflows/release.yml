@@ -1,0 +1,86 @@
+name: Publish GitHub Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - closed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag (e.g. v1.18.0-20261108)'
+        required: false
+
+jobs:
+  package:
+    name: Package Firmware Bundles
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Determine Release Tag
+        id: determine_tag
+        shell: pwsh
+        run: |
+          $event = "${{ github.event_name }}"
+          $refType = "${{ github.ref_type }}"
+          $refName = "${{ github.ref_name }}"
+          $inputTag = "${{ github.event.inputs.tag }}"
+          $prMerged = "${{ github.event.pull_request.merged }}"
+          $prNumber = "${{ github.event.pull_request.number }}"
+          $dateStamp = Get-Date -Format "yyyyMMdd"
+
+          if ($refType -eq "tag" -and $refName) {
+              $tag = $refName
+          } elseif ($inputTag) {
+              $tag = $inputTag
+          } elseif ($event -eq "pull_request" -and $prMerged -eq "true") {
+              $tag = "v1.18.0-pr$prNumber-$dateStamp"
+          } elseif ($event -eq "pull_request") {
+              $tag = "v1.18.0-pr$prNumber-preview"
+          } else {
+              $tag = "v1.18.0-$dateStamp"
+          }
+
+          Write-Host "Computed Release Tag: $tag"
+          "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Package Release Archives
+        shell: pwsh
+        run: |
+          .\scripts\package-release.ps1 -Tag "${{ env.RELEASE_TAG }}"
+
+      - name: Upload Build Artifacts for PR
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        uses: actions/upload-artifact@v4
+        with:
+          name: thinknode-m1-release-${{ env.RELEASE_TAG }}
+          path: releases/*.zip
+          retention-days: 14
+
+      - name: Publish GitHub Release (on Tag, Push to Main, or Merged PR)
+        if: |
+          github.ref_type == 'tag' ||
+          (github.event_name == 'push' && github.ref_name == 'main') ||
+          (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) ||
+          github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: MeshCore 1.18 — Release ${{ env.RELEASE_TAG }}
+          files: |
+            releases/*.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false

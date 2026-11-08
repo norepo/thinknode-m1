@@ -1,0 +1,24 @@
+# Gitignore for Elecrow ThinkNode M1 MeshCore project
+
+# Upstream repository & build artifacts
+MeshCore/
+MeshCore-dev/
+.pio/
+.venv/
+venv/
+
+# Compiler debug files and temporary logs
+*.elf
+*.map
+*.log
+*.tmp
+*.sconsign*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+scratch/
+releases/
